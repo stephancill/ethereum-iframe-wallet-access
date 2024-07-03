@@ -30,12 +30,20 @@ function App() {
           <button
             type="button"
             onClick={async () => {
+              let address = account.address;
               if (!account.address) {
-                await connectAsync({ connector: connectors[0] });
+                const connectData = await connectAsync({
+                  connector: connectors[0],
+                });
+                address = connectData.accounts[0];
+              }
+
+              if (!address) {
+                return;
               }
 
               transaction.sendTransaction({
-                to: account.address,
+                to: address,
               });
             }}
           >

@@ -1,51 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import {
-  useAccount,
-  useConnect,
-  useConnectorClient,
-  useDisconnect,
-} from "wagmi";
+import { useRef } from "react";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { usePenpalContext } from "../../providers/penpal-parent";
 
 export default function Page() {
-  const penpal = usePenpalContext();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const connection = useConnectorClient();
+
+  usePenpalContext({ iframe: iframeRef });
 
   const account = useAccount();
-  const { connectors, connect, status, error, connectAsync } = useConnect();
+  const { connectors, connect, status, error } = useConnect();
   const { disconnect } = useDisconnect();
-
-  const handleRequest = useCallback(
-    async (...request: any[]) => {
-      if (!connection.data?.transport.request) {
-        await connectAsync({ connector: connectors[0] });
-      }
-
-      const res = await connection.data?.transport.request(request[0]);
-      return res;
-    },
-    [connection.data?.transport.request]
-  );
-
-  useEffect(() => {
-    if (!iframeRef.current) return;
-    penpal.setIframe(iframeRef.current);
-  }, [iframeRef]);
-
-  useEffect(() => {
-    if (!iframeRef.current) return;
-
-    penpal.childConnection?.destroy();
-    penpal.connectToChild({
-      iframe: iframeRef.current,
-      methods: {
-        handleRequest,
-      },
-    });
-  }, [iframeRef, handleRequest, connection.data?.transport]);
 
   return (
     <div>

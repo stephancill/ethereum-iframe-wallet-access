@@ -1,13 +1,13 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
-import { WagmiProviders } from "../../providers/wagmi-parent";
+import { type ReactNode } from "react";
 import { PenpalProvider } from "../../providers/penpal-parent";
+import { WagmiProviders } from "../../providers/wagmi-parent";
 
 export function Providers(props: { children: ReactNode }) {
   return (
-    <PenpalProvider>
-      <WagmiProviders>{props.children}</WagmiProviders>
-    </PenpalProvider>
+    <WagmiProviders>
+      <PenpalProvider>{props.children}</PenpalProvider>
+    </WagmiProviders>
   );
 }

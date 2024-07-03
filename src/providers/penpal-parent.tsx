@@ -1,18 +1,15 @@
 "use client";
 
-import {
-  connectToParent as connectToParentPenpal,
-  connectToChild as connectToChildPenpal,
-  Connection,
-} from "penpal";
+import { Connection, connectToChild as connectToChildPenpal } from "penpal";
 import React, {
   createContext,
-  useContext,
-  useState,
   ReactNode,
   useCallback,
+  useContext,
   useEffect,
+  useState,
 } from "react";
+import { useConnect, useConnectorClient } from "wagmi";
 
 interface PenpalContextType {
   childConnection: Connection<any> | null;
@@ -38,15 +35,13 @@ export const PenpalProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   useEffect(() => {
-    console.log(`child connection changed`, childConnection);
-
     if (childConnection) {
-      console.log("reconnecting");
       iframe?.contentWindow?.postMessage(
         {
           type: "reconnect",
           key: Math.random(),
         },
+        // TODO: evaluate if "*" is safe
         "*"
       );
     }
@@ -65,12 +60,48 @@ export const PenpalProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-export const usePenpalContext = (): PenpalContextType => {
+export const usePenpalContext = ({
+  iframe,
+}: {
+  iframe: React.RefObject<HTMLIFrameElement>;
+}): PenpalContextType => {
   const context = useContext(PenpalContext);
   if (context === undefined) {
-    throw new Error(
-      "usePenpalContext parents must be used within a PenpalProvider"
-    );
+    throw new Error("usePenpalContext must be used within a PenpalProvider");
   }
+
+  const connection = useConnectorClient();
+  const { connectors, connect } = useConnect();
+
+  const handleRequest = useCallback(
+    async (...request: any[]) => {
+      if (!connection.data?.transport.request) {
+        connect({ connector: connectors[0] });
+        return;
+      }
+
+      const res = await connection.data?.transport.request(request[0]);
+      return res;
+    },
+    [connection.data?.transport.request, connect, connectors]
+  );
+
+  useEffect(() => {
+    if (!iframe.current) return;
+    context.setIframe(iframe.current);
+  }, [iframe]);
+
+  useEffect(() => {
+    if (!iframe.current) return;
+
+    context.childConnection?.destroy();
+    context.connectToChild({
+      iframe: iframe.current,
+      methods: {
+        handleRequest,
+      },
+    });
+  }, [iframe, handleRequest, connection.data?.transport]);
+
   return context;
 };

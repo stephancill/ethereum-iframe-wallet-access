@@ -2,9 +2,17 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
-import { type State, WagmiProvider } from "wagmi";
-
-import { getParentConfig } from "@/wagmi";
+import {
+  cookieStorage,
+  createConfig,
+  createStorage,
+  http,
+  type State,
+  WagmiProvider,
+} from "wagmi";
+import { mainnet, sepolia } from "wagmi/chains";
+import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
+import { chains } from "./wagmi-shared";
 
 export function WagmiProviders(props: {
   children: ReactNode;
@@ -20,4 +28,22 @@ export function WagmiProviders(props: {
       </QueryClientProvider>
     </WagmiProvider>
   );
+}
+
+export function getParentConfig() {
+  return createConfig({
+    chains: chains,
+    connectors: [
+      injected(),
+      coinbaseWallet(),
+      walletConnect({ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID! }),
+    ],
+    storage: createStorage({
+      storage: cookieStorage,
+    }),
+    transports: {
+      [mainnet.id]: http(),
+      [sepolia.id]: http(),
+    },
+  });
 }

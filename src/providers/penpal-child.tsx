@@ -14,8 +14,6 @@ import React, {
 interface PenpalContextType {
   parentConnection: ReturnType<typeof connectToParentPenpal> | null;
   connectToParent: (args: Parameters<typeof connectToParentPenpal>[0]) => void;
-
-  // temp
   handleRequest: (request: any[]) => Promise<any>;
 }
 
@@ -61,7 +59,6 @@ export const PenpalProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     if (parentMethods && connectionKey) {
-      console.log("connectToParent", connectionKey);
       parentConnection?.destroy();
       connectToParent({
         methods: parentMethods,
@@ -70,9 +67,8 @@ export const PenpalProvider: React.FC<{ children: ReactNode }> = ({
   }, [connectionKey, parentMethods]);
 
   useEffect(() => {
-    console.log(`child listening for messages`);
     window.addEventListener("message", (event) => {
-      console.log(`child received message`, event.data);
+      // Reload connection if key changes
       event.data?.key && setConnectionKey(event.data.key);
     });
   }, []);
